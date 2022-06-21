@@ -137,6 +137,7 @@ public class RedisExecutionRepository implements ExecutionRepository {
 
   @Override
   public void storeStage(@Nonnull StageExecution stage) {
+    log.info("RJR in storeStage with stage {} ", stage);
     storeStageInternal(getRedisDelegate(stage), stage, false);
   }
 
@@ -186,6 +187,7 @@ public class RedisExecutionRepository implements ExecutionRepository {
     if (stage.getSyntheticStageOwner() == null || stage.getParentStageId() == null) {
       throw new IllegalArgumentException("Only synthetic stages can be inserted ad-hoc");
     }
+    log.info("RJR in addStage with stage {} ", stage);
 
     storeStageInternal(getRedisDelegate(stage), stage, true);
   }
@@ -931,6 +933,7 @@ public class RedisExecutionRepository implements ExecutionRepository {
             }
             stage.setScheduledTime(NumberUtils.createLong(map.get(prefix + "scheduledTime")));
             if (map.get(prefix + "context") != null) {
+              log.info("RJR buildExecution with context {} ", map.get(prefix + "context"));
               stage.setContext(mapper.readValue(map.get(prefix + "context"), MAP_STRING_TO_OBJECT));
             } else {
               stage.setContext(emptyMap());
@@ -1374,6 +1377,7 @@ public class RedisExecutionRepository implements ExecutionRepository {
     String key = executionKey(stage);
     String indexKey = format("%s:stageIndex", key);
 
+    log.info("RJR in storeStageInternal with context - {} ", stage.getContext());
     Map<String, String> serializedStage = serializeStage(stage);
     List<String> keysToRemove =
         serializedStage.entrySet().stream()
