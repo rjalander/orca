@@ -113,12 +113,7 @@ public class CompoundExecutionOperator {
 
   public PipelineExecution restartStage(@Nonnull String executionId, @Nonnull String stageId) {
     PipelineExecution execution = repository.retrieve(ExecutionType.PIPELINE, executionId);
-    log.info("RJR -->  restartStage with execution {} ", execution.getContext());
     if (repository.handlesPartition(execution.getPartition())) {
-      log.info(
-          "RJR --> repository handlesPartition restart PipelineExecution executionId {} stageId {} ",
-          executionId,
-          stageId);
       runner.restart(execution, stageId);
     } else {
       log.info(
@@ -132,18 +127,8 @@ public class CompoundExecutionOperator {
   public PipelineExecution restartStage(
       @Nonnull String executionId, @Nonnull String stageId, Map restartDetails) {
     PipelineExecution execution = repository.retrieve(ExecutionType.PIPELINE, executionId);
-    log.info("RJR -->  restartStage with execution {} ", execution.getContext());
-    updatePreconditionStageExpression(restartDetails, execution);
-
-    for (StageExecution stage : execution.getStages()) {
-      log.info("RJR -->  restartStage with stage {} ", stage.getContext());
-    }
-
+    execution = updatePreconditionStageExpression(restartDetails, execution);
     if (repository.handlesPartition(execution.getPartition())) {
-      log.info(
-          "RJR --> repository handlesPartition restart PipelineExecution executionId {} stageId {} ",
-          executionId,
-          stageId);
       runner.restart(execution, stageId);
     } else {
       log.info(
@@ -156,87 +141,40 @@ public class CompoundExecutionOperator {
 
   private PipelineExecution updatePreconditionStageExpression(
       Map restartDetails, PipelineExecution execution) {
-    List<Map> expressionRequestMap = getExpressionFromPreconditionStage(restartDetails);
-    List<StageExecution> stagesToRemove = new ArrayList<>();
-    for (StageExecution stage : execution.getStages()) {
-      if (stage.getType() != null && !stage.getType().isEmpty()) {
-        log.info("RJR -->  updatePreconditionStageExpression stage.getType {} ", stage.getType());
-        log.info("RJR -->  updatePreconditionStageExpression with stage {} ", stage.getContext());
-        if (stage.getType().equalsIgnoreCase("checkPreconditions")) {
-          if (stage.getContext().get("preconditionType") != null
-              && stage
-                  .getContext()
-                  .get("preconditionType")
-                  .toString()
-                  .equalsIgnoreCase("expression")) {
-            log.info(
-                "RJR -->  updatePreconditionStageExpression removing the stage {} ",
-                stage.getContext());
-            stagesToRemove.add(stage);
-          } else {
+    List<Map> preconditionList = getPreconditionsFromStage(restartDetails);
+    if (!preconditionList.isEmpty()) {
+      for (StageExecution stage : execution.getStages()) {
+        if (stage.getType() != null && !stage.getType().isEmpty()) {
+          if (stage.getType().equalsIgnoreCase("checkPreconditions")) {
             if (stage.getContext().get("preconditions") != null) {
-              List<Map> preconditionsMap = (List<Map>) stage.getContext().get("preconditions");
-              log.info(
-                  "RJR -->  updatePreconditionStageExpression stage preconditionsMap {} ",
-                  preconditionsMap);
-              for (Map context : preconditionsMap) {
-                if (context.get("type").toString().equalsIgnoreCase("expression")) {
-                  Map expressionMap = (Map) context.get("context");
-                  String expression = expressionMap.get("expression").toString();
-                  log.info(
-                      "RJR1 -->  updatePreconditionStageExpression final expression {} ",
-                      expression);
-                }
-              }
-              stage.getContext().replace("preconditions", expressionRequestMap);
+              stage.getContext().replace("preconditions", preconditionList);
               repository.storeStage(stage);
+              log.info("Updated preconditions for CheckPreconditions stage");
             }
           }
         }
-
-        log.info(
-            "RJR -->  updatePreconditionStageExpression with type {} stage context {} ",
-            stage.getType(),
-            stage.getContext());
       }
     }
-    execution.getStages().removeAll(stagesToRemove);
     return execution;
   }
 
-  private List<Map> getExpressionFromPreconditionStage(Map restartDetails) {
-    List<Map> contextMap = new ArrayList();
-    log.info(
-        "RJR1 -->  getExpressionFromPreconditionStage with restartDetails {} ", restartDetails);
+  private List<Map> getPreconditionsFromStage(Map restartDetails) {
+    List<Map> preconditionList = new ArrayList();
     Map pipelineConfigMap = new HashMap(restartDetails);
-    log.info(
-        "RJR1 -->  getExpressionFromPreconditionStage with pipelineConfigMap {} ",
-        pipelineConfigMap);
-    List<String> keysToRetain = new ArrayList<>();
+    List<String> keysToRetain = new ArrayList();
     keysToRetain.add("stages");
     pipelineConfigMap.keySet().retainAll(keysToRetain);
-    log.info(
-        "RJR1 -->  getExpressionFromPreconditionStage pipelineConfigMap after retained with stages {} ",
-        pipelineConfigMap);
-    Map<String, List<Map>> stageMap = new HashMap(pipelineConfigMap);
-    log.info("RJR1 -->  getExpressionFromPreconditionStage with stageMap {} ", stageMap);
-    if (!stageMap.isEmpty() && stageMap != null) {
-      List<Map> pipelineStageList = stageMap.get(keysToRetain.get(0));
-      for (Map pipelineStage : pipelineStageList) {
-        if (pipelineStage.get("type").toString().equalsIgnoreCase("checkPreconditions")) {
-          contextMap = (List<Map>) pipelineStage.get("preconditions");
-          for (Map context : contextMap) {
-            if (context.get("type").toString().equalsIgnoreCase("expression")) {
-              Map<String, Object> expressionMap = (Map<String, Object>) context.get("context");
-              String expression = (String) expressionMap.get("expression");
-              log.info(
-                  "RJR1 -->  getExpressionFromPreconditionStage final expression {} ", expression);
-            }
-          }
+    Map<String, List<Map>> pipelineStageMap = new HashMap(pipelineConfigMap);
+    if (!pipelineStageMap.isEmpty() && pipelineStageMap != null) {
+      List<Map> pipelineStageList = pipelineStageMap.get(keysToRetain.get(0));
+      for (Map stageMap : pipelineStageList) {
+        if (stageMap.get("type").toString().equalsIgnoreCase("checkPreconditions")) {
+          preconditionList = (List<Map>) stageMap.get("preconditions");
+          log.info("Retrieved preconditions for CheckPreconditions stage");
         }
       }
     }
-    return contextMap;
+    return preconditionList;
   }
 
   private PipelineExecution doInternal(
