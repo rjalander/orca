@@ -42,6 +42,10 @@ class QueueExecutionRunner(
     queue.push(ResumeExecution(execution))
   }
 
+  override fun reorder(execution: PipelineExecution) {
+    queue.push(ReorderWaitingExecution(execution))
+  }
+
   override fun cancel(execution: PipelineExecution, user: String, reason: String?) {
     queue.push(CancelExecution(execution, user, reason))
   }

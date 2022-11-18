@@ -102,6 +102,16 @@ public class PipelineExecutionImpl implements PipelineExecution, Serializable {
     this.name = name;
   }
 
+  private String reorderAction;
+
+  public String getReorderAction() {
+    return reorderAction;
+  }
+
+  public void setReorderAction(String reorderAction) {
+    this.reorderAction = reorderAction;
+  }
+
   private Long buildTime;
 
   public @Nullable Long getBuildTime() {

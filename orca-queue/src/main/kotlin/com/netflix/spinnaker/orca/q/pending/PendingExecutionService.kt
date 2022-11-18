@@ -25,6 +25,8 @@ import com.netflix.spinnaker.q.Message
 interface PendingExecutionService {
   fun enqueue(pipelineConfigId: String, message: Message)
   fun popOldest(pipelineConfigId: String): Message?
+  fun reorderExecutions(pipelineConfigId: String)
+  fun reorderExecutions(pipelineConfigId: String, id: String, reorderAction: String)
   fun popNewest(pipelineConfigId: String): Message?
   fun purge(pipelineConfigId: String, callback: (Message) -> Unit)
   fun depth(pipelineConfigId: String): Int

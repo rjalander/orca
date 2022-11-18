@@ -89,6 +89,21 @@ public class CompoundExecutionOperator {
         executionId);
   }
 
+  public void reorder(
+      @Nonnull ExecutionType executionType,
+      @Nonnull String executionId,
+      @Nullable String user,
+      @Nullable String reorderAction) {
+    PipelineExecution execution = repository.retrieve(executionType, executionId);
+    log.info("RJR in CompoundExecution SET reorderAction {} ", execution.getReorderAction());
+    doInternal(
+        runner::reorder,
+        () -> repository.reorder(executionType, executionId, user, reorderAction),
+        "reorder",
+        executionType,
+        executionId);
+  }
+
   public PipelineExecution updateStage(
       @Nonnull ExecutionType executionType,
       @Nonnull String executionId,
@@ -194,6 +209,7 @@ public class CompoundExecutionOperator {
           runWithRetries(
               () -> {
                 PipelineExecution execution = repository.retrieve(executionType, executionId);
+                log.info("RJR doInternal returing reorderAction {}", execution.getReorderAction());
                 if (repository.handlesPartition(execution.getPartition())) {
                   runnerAction.accept(execution);
                 } else {

@@ -38,6 +38,7 @@ internal val orcaToKeikoTypes = mapOf(
   ".RescheduleExecution" to "rescheduleExecution",
   ".CompleteExecution" to "completeExecution",
   ".ResumeExecution" to "resumeExecution",
+  ".ReorderWaitingExecution" to "reorderWaitingExecution",
   ".CancelExecution" to "cancelExecution",
   ".InvalidExecutionId" to "invalidExecutionId",
   ".InvalidStageId" to "invalidStageId",

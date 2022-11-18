@@ -146,6 +146,10 @@ class DualExecutionRepository(
   override fun resume(type: ExecutionType, id: String, user: String?, ignoreCurrentStatus: Boolean) {
     select(type, id).resume(type, id, user, ignoreCurrentStatus)
   }
+  
+  override fun reorder(type: ExecutionType, id: String, user: String?, reorderAction: String?) {
+    log.info("RJR DualPendingExecutionService Not implemented")
+  }
 
   override fun isCanceled(type: ExecutionType?, id: String): Boolean {
     return select(type, id).isCanceled(type, id)

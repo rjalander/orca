@@ -45,6 +45,10 @@ public interface PipelineExecution {
 
   void setName(String name);
 
+  String getReorderAction();
+
+  void setReorderAction(String reorderAction);
+
   Long getBuildTime();
 
   void setBuildTime(Long buildTime);

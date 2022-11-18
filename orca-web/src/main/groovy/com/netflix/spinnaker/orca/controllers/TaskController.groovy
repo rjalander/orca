@@ -34,6 +34,8 @@ import com.netflix.spinnaker.orca.util.ExpressionUtils
 import com.netflix.spinnaker.security.AuthenticatedRequest
 import groovy.transform.InheritConstructors
 import groovy.util.logging.Slf4j
+import retrofit.http.Query
+
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
@@ -56,6 +58,9 @@ import static com.netflix.spinnaker.orca.pipeline.persistence.ExecutionRepositor
 import static com.netflix.spinnaker.orca.pipeline.persistence.ExecutionRepository.ExecutionComparator
 import static com.netflix.spinnaker.orca.pipeline.persistence.ExecutionRepository.ExecutionCriteria
 import static java.time.temporal.ChronoUnit.DAYS
+import com.netflix.spinnaker.orca.q.ReorderWaitingExecution
+import com.netflix.spinnaker.orca.q.ReorderWaitingPipelineExecution
+import com.netflix.spinnaker.orca.q.StartWaitingExecutions
 
 @Slf4j
 @RestController
@@ -89,6 +94,7 @@ class TaskController {
 
   @Autowired
   StageDefinitionBuilderFactory stageDefinitionBuilderFactory
+  
 
   @Value('${tasks.days-of-execution-history:14}')
   int daysOfExecutionHistory
@@ -503,6 +509,30 @@ class TaskController {
   PipelineExecution retryPipelineStage(
     @PathVariable String id, @PathVariable String stageId, @RequestBody Map restartDetails) {
     return executionOperator.restartStage(id, stageId, restartDetails)
+  }
+  
+  @PreAuthorize("hasPermission(this.getPipeline(#id)?.application, 'APPLICATION', 'EXECUTE')")
+  @RequestMapping(value = "/pipelines/{id}/reorder", method = RequestMethod.PUT)
+  PipelineExecution reorderWaitingPipeline(
+	@PathVariable String id, @Query("reorderAction") String reorderAction) {
+	log.info("RJR Received Pipeline execution id {} with reorderAction {} ", id, reorderAction)
+	com.netflix.spinnaker.orca.api.pipeline.models.PipelineExecution pipeline = getPipeline(id);
+	String pipelineConfigId = pipeline.getPipelineConfigId();
+	String application = pipeline.getApplication();
+	pipeline.setReorderAction(reorderAction);
+		
+	log.info("RJR Sending to ReorderWaitingExecution with application {} and pipelineConfigId {} ", application, pipelineConfigId)
+	ExecutionStatus executionStatus = pipeline.getStatus();
+	
+	//ReorderWaitingExecution(pipeline)
+	//ReorderWaitingExecution(pipeline.getType(), pipeline.getId(), pipeline.getApplication())
+
+	//StartWaitingExecutions(pipelineConfigId, false);
+	//ReorderWaitingPipelineExecution.reorderExecution(pipeline);
+	
+	executionOperator.reorder(PIPELINE, id, AuthenticatedRequest.getSpinnakerUser().orElse("anonymous"), reorderAction)
+	
+	return pipeline;
   }
 
   @PreAuthorize("hasPermission(this.getPipeline(#id)?.application, 'APPLICATION', 'READ')")

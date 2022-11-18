@@ -133,6 +133,14 @@ class SqlPendingExecutionService(
     return message
   }
 
+  override fun reorderExecutions(pipelineConfigId: String) {
+    log.debug("Not implemented")
+  }
+
+  override fun reorderExecutions(pipelineConfigId: String, id: String, reorderAction: String) {
+    log.info("Not implemented")
+  }
+
   private fun pop(pipelineConfigId: String, sortField: SortField<Any>): Message? {
     try {
       return withRetry {

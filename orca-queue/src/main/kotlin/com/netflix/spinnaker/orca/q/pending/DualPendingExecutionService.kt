@@ -56,7 +56,7 @@ class DualPendingExecutionService(
 
   init {
     allPendingServices.forEach {
-      log.info("Available PendingExecutionServices: $it")
+      log.info("RJR DualPendingExecutionService Available PendingExecutionServices: $it")
     }
 
     primary = allPendingServices.first { it.javaClass.name == config.primaryClass }
@@ -66,13 +66,22 @@ class DualPendingExecutionService(
   override fun enqueue(pipelineConfigId: String, message: Message) =
     primary.enqueue(pipelineConfigId, message)
 
+  override fun reorderExecutions(pipelineConfigId: String) {
+    log.info("RJR DualPendingExecutionService Not implemented")
+  }
+
+  override fun reorderExecutions(pipelineConfigId: String, id: String, reorderAction: String) {
+    log.info("RJR DualPendingExecutionService Not implemented")
+  }
+
   override fun popOldest(pipelineConfigId: String): Message? {
     val message = previous.popOldest(pipelineConfigId)
     return if (message != null) {
       registry.counter(hitFromSecondaryId).increment()
-      log.debug("Found message from previous PendingExecutionService (${previous.javaClass}) for $pipelineConfigId")
+      log.info("Found message from previous PendingExecutionService (${previous.javaClass}) for $pipelineConfigId")
       message
     } else {
+      log.info("RJR Found message from primary PendingExecutionService for popOldest")
       primary.popOldest(pipelineConfigId)
     }
   }

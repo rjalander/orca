@@ -18,12 +18,16 @@ package com.netflix.spinnaker.orca.q.pending
 import com.netflix.spinnaker.q.Message
 import java.util.Deque
 import java.util.LinkedList
+import org.slf4j.LoggerFactory
 
 class InMemoryPendingExecutionService : PendingExecutionService {
+
+  private val log = LoggerFactory.getLogger(javaClass)
 
   private val pending: MutableMap<String, Deque<Message>> = mutableMapOf()
 
   override fun enqueue(pipelineConfigId: String, message: Message) {
+    log.info("RJR InMemory pendingFor PendingExecutionService in enqueue")
     pendingFor(pipelineConfigId).addLast(message)
   }
 
@@ -32,9 +36,18 @@ class InMemoryPendingExecutionService : PendingExecutionService {
       if (it.isEmpty()) {
         null
       } else {
+        log.info("RJR InMemory pendingFor PendingExecutionService in popOldest")
         it.removeFirst()
       }
     }
+  }
+
+  override fun reorderExecutions(pipelineConfigId: String) {
+    log.info("RJR DualPendingExecutionService Not implemented")
+  }
+
+  override fun reorderExecutions(pipelineConfigId: String, id: String, reorderAction: String) {
+    log.info("RJR DualPendingExecutionService Not implemented")
   }
 
   override fun popNewest(pipelineConfigId: String): Message? {

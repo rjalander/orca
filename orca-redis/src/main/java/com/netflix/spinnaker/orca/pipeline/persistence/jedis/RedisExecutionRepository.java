@@ -288,6 +288,30 @@ public class RedisExecutionRepository implements ExecutionRepository {
   }
 
   @Override
+  public void reorder(ExecutionType type, String id, String user, String reorderAction) {
+    log.info("RJR reorder Execution {} ", id);
+    ImmutablePair<String, RedisClientDelegate> pair = fetchKey(id);
+    RedisClientDelegate delegate = pair.getRight();
+    delegate.withCommandsClient(
+        c -> {
+          Map<String, String> data = new HashMap<>();
+          data.put("reordered", "true");
+          data.put("reorderAction", reorderAction);
+          if (StringUtils.isNotEmpty(user)) {
+            data.put("reorderedBy", user);
+          }
+
+          ExecutionStatus currentStatus = ExecutionStatus.valueOf(c.hget(pair.getLeft(), "status"));
+          log.info("RJR current status is {} of the execution {}", currentStatus, id);
+          //	          if (currentStatus == ExecutionStatus.NOT_STARTED) {
+          //	            data.put("status", ExecutionStatus.CANCELED.name());
+          //	          }
+          c.hmset(pair.getLeft(), data);
+          c.srem(allBufferedExecutionsKey(type), id);
+        });
+  }
+
+  @Override
   public boolean isCanceled(ExecutionType type, @Nonnull String id) {
     ImmutablePair<String, RedisClientDelegate> pair = fetchKey(id);
     RedisClientDelegate delegate = pair.getRight();
@@ -894,6 +918,10 @@ public class RedisExecutionRepository implements ExecutionRepository {
         ((PipelineExecutionImpl) execution)
             .getSystemNotifications()
             .addAll(mapper.readValue(map.get("systemNotifications"), LIST_OF_SYSTEM_NOTIFICATIONS));
+      }
+      if (map.get("reorderAction") != null) {
+        log.info("RJR buildExecution with reorderAction {} ", map.get("reorderAction"));
+        execution.setReorderAction(map.get("reorderAction"));
       }
     } catch (Exception e) {
       registry.counter(serializationErrorId).increment();

@@ -27,9 +27,12 @@ import java.lang.System.currentTimeMillis
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 import rx.Observable
+import org.slf4j.LoggerFactory
 
 class InMemoryExecutionRepository : ExecutionRepository {
 
+  private val log = LoggerFactory.getLogger(javaClass)
+  
   private val correlationIds: MutableMap<String, String> = ConcurrentHashMap()
   private val pipelines: MutableMap<String, PipelineExecution> = ConcurrentHashMap()
   private val orchestrations: MutableMap<String, PipelineExecution> = ConcurrentHashMap()
@@ -98,6 +101,10 @@ class InMemoryExecutionRepository : ExecutionRepository {
       it.paused?.resumeTime = currentTimeMillis()
       store(it)
     }
+  }
+
+  override fun reorder(type: ExecutionType, id: String, user: String?, reorderAction: String?) {
+    log.info("RJR InMemoryExecutionRepository Not implemented")
   }
 
   override fun isCanceled(type: ExecutionType, id: String): Boolean {

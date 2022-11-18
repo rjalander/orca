@@ -40,6 +40,10 @@ interface ApplicationAware {
 interface ExecutionLevel : ApplicationAware {
   val executionType: ExecutionType
   val executionId: String
+
+}
+interface ReorderWatingExecutionLevel : ExecutionLevel{
+  val reorderAction: String
 }
 
 interface StageLevel : ExecutionLevel {
@@ -287,6 +291,32 @@ data class StartExecution(
   constructor(source: PipelineExecution) :
     this(source.type, source.id, source.application)
 }
+
+@JsonTypeName("reorderWaitingExecution")
+data class ReorderWaitingExecution(
+  override val executionType: ExecutionType,
+  override val executionId: String,
+  override val application: String,
+  override val reorderAction: String
+) : Message(), ReorderWatingExecutionLevel {
+  constructor(source: PipelineExecution) :
+    this(source.type, source.id, source.application, source.reorderAction)
+}
+
+
+
+//@JsonTypeName("reorderWaitingExecution")
+//data class ReorderWaitingExecution(
+//  val executionType: ExecutionType,
+//  val executionId: String,
+//  val application: String
+//) : Message()
+
+//@JsonTypeName("startWaitingExecutions")
+//data class StartWaitingExecutions(
+//  val pipelineConfigId: String,
+//  val purgeQueue: Boolean = false
+//) : Message()
 
 @JsonTypeName("rescheduleExecution")
 data class RescheduleExecution(

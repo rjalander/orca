@@ -59,6 +59,12 @@ public interface ExecutionRepository {
       @Nullable String user,
       boolean ignoreCurrentStatus);
 
+  void reorder(
+      @Nonnull ExecutionType type,
+      @Nonnull String id,
+      @Nullable String user,
+      @Nullable String reorderAction);
+
   boolean isCanceled(ExecutionType type, @Nonnull String id);
 
   default void updateStatus(@Nonnull PipelineExecution execution) {

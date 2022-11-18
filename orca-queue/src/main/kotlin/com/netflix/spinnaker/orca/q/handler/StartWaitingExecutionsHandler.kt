@@ -40,6 +40,9 @@ class StartWaitingExecutionsHandler(
   override val messageType = StartWaitingExecutions::class.java
 
   override fun handle(message: StartWaitingExecutions) {
+//    log.info("RJR Reordering queued pipelines for {}", message.pipelineConfigId)
+//    pendingExecutionService.reorderExecutions(message.pipelineConfigId)
+//    log.info("RJR Done Reordering queued pipelines for {}", message.pipelineConfigId)
     if (message.purgeQueue) {
       // when purging the queue, run the latest message and discard the rest
       pendingExecutionService.popNewest(message.pipelineConfigId)
@@ -51,7 +54,7 @@ class StartWaitingExecutionsHandler(
                 queue.push(CancelExecution(
                   source = purgedMessage,
                   user = "spinnaker",
-                  reason = "This execution was queued but then canceled because a newer queued execution superceded it. This pipeline is configured to automatically cancel waiting executions." 
+                  reason = "This execution was queued but then canceled because a newer queued execution superceded it. This pipeline is configured to automatically cancel waiting executions."
                 ))
               }
               is RestartStage -> {

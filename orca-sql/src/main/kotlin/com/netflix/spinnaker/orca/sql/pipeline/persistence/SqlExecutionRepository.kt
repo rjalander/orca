@@ -243,6 +243,10 @@ class SqlExecutionRepository(
       storeExecutionInternal(dslContext, execution)
     }
   }
+  
+  override fun reorder(type: ExecutionType, id: String, user: String?, reorderAction: String?) {
+    log.info("RJR InMemoryExecutionRepository Not implemented")
+  }
 
   override fun isCanceled(type: ExecutionType, id: String): Boolean {
     withPool(poolName) {
