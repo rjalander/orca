@@ -516,21 +516,22 @@ class TaskController {
   PipelineExecution reorderWaitingPipeline(
 	@PathVariable String id, @Query("reorderAction") String reorderAction) {
 	log.info("RJR Received Pipeline execution id {} with reorderAction {} ", id, reorderAction)
-	com.netflix.spinnaker.orca.api.pipeline.models.PipelineExecution pipeline = getPipeline(id);
+	PipelineExecution pipeline = getPipeline(id);
 	String pipelineConfigId = pipeline.getPipelineConfigId();
 	String application = pipeline.getApplication();
 	pipeline.setReorderAction(reorderAction);
 		
 	log.info("RJR Sending to ReorderWaitingExecution with application {} and pipelineConfigId {} ", application, pipelineConfigId)
 	ExecutionStatus executionStatus = pipeline.getStatus();
-	
-	//ReorderWaitingExecution(pipeline)
-	//ReorderWaitingExecution(pipeline.getType(), pipeline.getId(), pipeline.getApplication())
-
-	//StartWaitingExecutions(pipelineConfigId, false);
-	//ReorderWaitingPipelineExecution.reorderExecution(pipeline);
-	
-	executionOperator.reorder(PIPELINE, id, AuthenticatedRequest.getSpinnakerUser().orElse("anonymous"), reorderAction)
+		
+	executionRepository.retrieve(PIPELINE, id).with {
+		if (it.status.isWaiting()) {
+		  executionOperator.reorder(PIPELINE, id, AuthenticatedRequest.getSpinnakerUser().orElse("anonymous"), reorderAction)
+		} else {
+		  log.warn("Not reordering $PIPELINE $id as it is $it.status")
+		  throw new CannotReorderNOTWaitingExecution(PIPELINE, id)
+		}
+	  }
 	
 	return pipeline;
   }
@@ -889,6 +890,13 @@ class TaskController {
     CannotDeleteRunningExecution(ExecutionType type, String id) {
       super("Cannot delete a running $type, please cancel it first.")
     }
+  }
+  
+  @ResponseStatus(HttpStatus.NOT_FOUND)
+  private static class CannotReorderNOTWaitingExecution extends RuntimeException {
+	CannotReorderNOTWaitingExecution(ExecutionType type, String id) {
+	  super("Cannot reorder $type execution which is not in waiting status.")
+	}
   }
 
   @InheritConstructors

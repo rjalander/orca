@@ -75,6 +75,10 @@ public enum ExecutionStatus implements CharSequence {
     return SKIPPED.equals(this);
   }
 
+  public final boolean isWaiting() {
+    return NOT_STARTED.equals(this);
+  }
+
   /** Indicates an abnormal completion so nothing downstream should run afterward. */
   public final boolean isHalt() {
     return halt;

@@ -167,7 +167,7 @@ private fun StageExecution.buildExecutionWindow(): StageExecution? {
 }
 
 @Suppress("UNCHECKED_CAST")
-private fun .injectStage(index: Int, stage: StageExecution) {
+private fun PipelineExecution.injectStage(index: Int, stage: StageExecution) {
   stages.add(index, stage)
 }
 

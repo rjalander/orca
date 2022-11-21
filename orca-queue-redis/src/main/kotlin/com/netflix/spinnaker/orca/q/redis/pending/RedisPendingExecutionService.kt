@@ -87,7 +87,7 @@ class RedisPendingExecutionService(
     pool.resource.use { redis ->
       val listSize = redis.llen(listName(pipelineConfigId))
       log.info("RJR running reorderExecutions list size is {}", listSize)
-      if (listSize > 2) {
+      if (listSize > 1) {
         var currentExecution = ""
         run breaking@ {
           redis.lrange(listName(pipelineConfigId), 0, listSize-1).forEach { execution ->
